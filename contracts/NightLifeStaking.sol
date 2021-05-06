@@ -12,18 +12,18 @@ contract NightLifeStaking is Context, Ownable {
     using Address for address;
     using SafeERC20 for IERC20;
 
-    address lpToken;
-    address rewardToken;
+    address public lpToken;
+    address public rewardToken;
     
-	address NLIFEWallet;
+	address public NLIFEWallet;
 
     struct STAKE {
         uint256 amount;
-        uint256 _lastUpdatedAt;
+        uint256 lastUpdatedAt;
     }
 
-    mapping(address => STAKE) _stakeInfo;
-    address[] _stakers;
+    mapping(address => STAKE) public _stakeInfo;
+    address[] public _stakers;
 
     event Stake(address _staker, uint256 amount);
     event Unstake(address _staker, uint256 amount);
@@ -39,6 +39,7 @@ contract NightLifeStaking is Context, Ownable {
      */
 
     function updateNLIFEWallet(address _newAddr) public onlyOwner {
+        require(_newAddr != address(0), "Avoid Zero Address");
         NLIFEWallet = _newAddr;
     }
 
@@ -68,7 +69,7 @@ contract NightLifeStaking is Context, Ownable {
         uint256 _rewards = totalRewards();
         uint256 _singlePart =
             _stakeDetail.amount.mul(
-                block.timestamp.sub(_stakeDetail._lastUpdatedAt)
+                block.timestamp.sub(_stakeDetail.lastUpdatedAt)
             );
 
         uint256 _totalPart;
@@ -78,7 +79,7 @@ contract NightLifeStaking is Context, Ownable {
 
             _totalPart = _totalPart.add(
                 _singleStake.amount.mul(
-                    block.timestamp.sub(_singleStake._lastUpdatedAt)
+                    block.timestamp.sub(_singleStake.lastUpdatedAt)
                 )
             );
         }
@@ -96,14 +97,14 @@ contract NightLifeStaking is Context, Ownable {
         if (_stake.amount > 0) {
             uint256 reward = rewardOf(_msgSender());
             IERC20(rewardToken).safeTransfer(_msgSender(), reward);
+            _stake.lastUpdatedAt = block.timestamp;
             _stake.amount = _stake.amount.add(_amount);
             emit Withdraw(_msgSender(), reward);
         } else {
+            _stake.lastUpdatedAt = block.timestamp;
             _stake.amount = _amount;
             _stakers.push(_msgSender());
         }
-
-        _stake._lastUpdatedAt = block.timestamp;
 
         emit Stake(_msgSender(), _amount);
     }
@@ -118,7 +119,7 @@ contract NightLifeStaking is Context, Ownable {
         IERC20(rewardToken).safeTransfer(_msgSender(), reward);
 
         _stake.amount = 0;
-        _stake._lastUpdatedAt = block.timestamp;
+        _stake.lastUpdatedAt = block.timestamp;
 
         for (uint256 i = 0; i < _stakers.length; i++) {
             if (_stakers[i] == _msgSender()) {
@@ -138,7 +139,7 @@ contract NightLifeStaking is Context, Ownable {
     function claimReward() public {
         STAKE storage _stake = _stakeInfo[_msgSender()];
         uint256 reward = rewardOf(_msgSender());
-        _stake._lastUpdatedAt = block.timestamp;
+        _stake.lastUpdatedAt = block.timestamp;
 
         IERC20(rewardToken).safeTransfer(_msgSender(), reward);
         emit Withdraw(_msgSender(), reward);

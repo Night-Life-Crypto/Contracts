@@ -11,21 +11,20 @@ contract NightLifeCrypto is Context, IERC20, Ownable {
     using SafeMath for uint256;
     using Address for address;
 
-    mapping(address => uint256) private _balances;
+    mapping(address => uint256) public _balances;
 
-    mapping(address => mapping(address => uint256)) private _allowances;
+    mapping(address => mapping(address => uint256)) public _allowances;
 
-    uint256 private _totalSupply;
+    uint256 public _totalSupply;
 
-    string private _name = "Night Life Crypto";
-    string private _symbol = "NLIFE";
-	uint256 private _decimals = 8;
-    uint256 private _total = 3425000 * 10**_decimals;
+    string public _name = "Night Life Crypto";
+    string public _symbol = "NLIFE";
+    uint256 public _total = 3425000 * 10**8;
 
     mapping(address => bool) private _whitelisted;
 	
-    address lpSkAddr;
-	address NLIFEWallet;
+    address public lpSkAddr;
+	address public NLIFEWallet;
 
     constructor() public {
 		NLIFEWallet = _msgSender();
@@ -99,8 +98,8 @@ contract NightLifeCrypto is Context, IERC20, Ownable {
      * no way affects any of the arithmetic of the contract, including
      * {IERC20-balanceOf} and {IERC20-transfer}.
      */
-    function decimals() public view virtual returns (uint256) {
-        return _decimals;
+    function decimals() public view virtual returns (uint8) {
+        return 8;
     }
 
     /**
@@ -196,7 +195,7 @@ contract NightLifeCrypto is Context, IERC20, Ownable {
             currentAllowance >= amount,
             "ERC20: transfer amount exceeds allowance"
         );
-        _approve(sender, _msgSender(), currentAllowance - amount);
+        _approve(sender, _msgSender(), currentAllowance.sub(amount));
 
         return true;
     }
@@ -221,7 +220,7 @@ contract NightLifeCrypto is Context, IERC20, Ownable {
         _approve(
             _msgSender(),
             spender,
-            _allowances[_msgSender()][spender] + addedValue
+            _allowances[_msgSender()][spender].add(addedValue)
         );
         return true;
     }
