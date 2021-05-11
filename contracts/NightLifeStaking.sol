@@ -96,9 +96,9 @@ contract NightLifeStaking is Context, Ownable {
 
         if (_stake.amount > 0) {
             uint256 reward = rewardOf(_msgSender());
-            IERC20(rewardToken).safeTransfer(_msgSender(), reward);
             _stake.lastUpdatedAt = block.timestamp;
             _stake.amount = _stake.amount.add(_amount);
+            IERC20(rewardToken).safeTransfer(_msgSender(), reward);
             emit Withdraw(_msgSender(), reward);
         } else {
             _stake.lastUpdatedAt = block.timestamp;
@@ -115,11 +115,11 @@ contract NightLifeStaking is Context, Ownable {
         STAKE storage _stake = _stakeInfo[_msgSender()];
         uint256 reward = rewardOf(_msgSender());
         uint256 amount = _stake.amount;
+        _stake.amount = 0;
+        _stake.lastUpdatedAt = block.timestamp;
 
         IERC20(rewardToken).safeTransfer(_msgSender(), reward);
 
-        _stake.amount = 0;
-        _stake.lastUpdatedAt = block.timestamp;
 
         for (uint256 i = 0; i < _stakers.length; i++) {
             if (_stakers[i] == _msgSender()) {
