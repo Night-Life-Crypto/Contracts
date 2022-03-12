@@ -7,14 +7,12 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "./PolarityTestToken.sol";
 
 contract UserRewards is Context, Ownable{
    
     address public _lpToken;
     address public _rewardToken;
     address public NLIFEWallet;
-    PolarityTestToken polarityToken;
 
     struct USERREWARD{
         uint256 userReward;     
@@ -45,11 +43,6 @@ contract UserRewards is Context, Ownable{
        return findUser.userReward;
    }
 
-
-   function totalRewards() public view returns(uint256){
-       return totalWalletBalance() - totalUserRewards();
-   }
-
    function totalWalletBalance() public view returns(uint256){
      return IERC20(_rewardToken).balanceOf(address(this));
    }
@@ -74,8 +67,7 @@ contract UserRewards is Context, Ownable{
 
    // Calculate Claim Reward when user claims
     function claimUserRewardsV2(address staker) public view returns(uint256) {             
-        STAKE memory stakerUser = _stakeInfo[staker];
-        USERREWARD memory userRew = _userRewardsDetails[staker];
+        STAKE memory stakerUser = _stakeInfo[staker];       
         uint256 partitionStakeAmount = SafeMath.div(stakerUser.amount * 100, totalStakeAmount());
         uint256 totalRewardsAmount = SafeMath.sub(totalWalletBalance(),totalUserRewards()); 
         uint256 userIncrementReward = SafeMath.div(SafeMath.mul(totalRewardsAmount, partitionStakeAmount), 100);       
@@ -93,19 +85,14 @@ contract UserRewards is Context, Ownable{
         _lpToken = lpToken;
     }
 
-    function _rewardTokenAddr() public view returns (address) {
-        return _rewardToken;
-    }   
-
     function stake(uint256 _amount) public {
         // send fund to stake holding wallet        
         IERC20(_lpToken).transferFrom(_msgSender(), address(this), _amount);
         STAKE storage _stake = _stakeInfo[_msgSender()];  
-        if (_stake.amount > 0) {
-            uint256 reward = claimUserRewardsV2(msg.sender);
+        if (_stake.amount > 0) {        
+             claimReward();
             _stake.lastUpdatedAt = block.timestamp;
-            _stake.amount = SafeMath.add(_stake.amount, _amount);
-            claimReward();
+            _stake.amount = SafeMath.add(_stake.amount, _amount);           
             emit Stake(_msgSender(), _amount);
         } else {
             _stake.lastUpdatedAt = block.timestamp;
@@ -152,7 +139,7 @@ contract UserRewards is Context, Ownable{
            }            
         }        
         uint256 totalReward = SafeMath.add(reward, _userRewardsDetails[_msgSender()].userReward);
-        _userRewardsDetails[_msgSender()].userReward = 0; //SafeMath.add(reward, _userRewardsDetails[_msgSender()].userReward);
+        _userRewardsDetails[_msgSender()].userReward = 0; 
         IERC20(_rewardToken).transfer(_msgSender(), totalReward);
         emit Withdraw(_msgSender(), totalReward);
     }
