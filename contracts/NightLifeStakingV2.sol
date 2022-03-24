@@ -66,7 +66,7 @@ contract UserRewards is Context, Ownable{
     }
 
    // Calculate Claim Reward when user claims
-    function claimUserRewardsV2(address staker) public view returns(uint256) {             
+    function rewardOf(address staker) public view returns(uint256) {             
         STAKE memory stakerUser = _stakeInfo[staker];       
         uint256 partitionStakeAmount = SafeMath.div(stakerUser.amount * 100, totalStakeAmount());
         uint256 totalRewardsAmount = SafeMath.sub(totalWalletBalance(),totalUserRewards()); 
@@ -129,12 +129,12 @@ contract UserRewards is Context, Ownable{
         STAKE storage _stake = _stakeInfo[_msgSender()];
         // Calculate for user who claim reward           
         _stake.lastUpdatedAt = block.timestamp;
-        uint256 reward = claimUserRewardsV2(_msgSender());      
+        uint256 reward = rewardOf(_msgSender());      
 
         // iterate through rest of the users       
         for(uint i = 0; i < _stakers.length; i++){  
            if(_stakers[i] != _msgSender()){                     
-            uint256 newReward = claimUserRewardsV2(_stakers[i]);
+            uint256 newReward = rewardOf(_stakers[i]);
             _userRewardsDetails[_stakers[i]].userReward = SafeMath.add(newReward, _userRewardsDetails[_stakers[i]].userReward);
            }            
         }        
