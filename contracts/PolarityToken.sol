@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 
 contract PolarityTestToken is Context, ERC20 {
-    constructor() ERC20("Polarity TestETH Token Rewards", "PETR") {
-        _mint(msg.sender, 10000 * 10 ** 18);
+    constructor() ERC20("NLIFE LP Token", "NLIFELPTOKEN2") {
+        _mint(msg.sender, 1000000000000 * 10 ** 18);
     }
 }

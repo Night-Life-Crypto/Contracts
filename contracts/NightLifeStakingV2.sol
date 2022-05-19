@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
-contract UserRewards is Context, Ownable{
+contract UserRewardsV4 is Context, Ownable{
    
     address public _lpToken;
     address public _rewardToken;
@@ -70,8 +70,15 @@ contract UserRewards is Context, Ownable{
         STAKE memory stakerUser = _stakeInfo[staker];       
         uint256 partitionStakeAmount = SafeMath.div(stakerUser.amount * 100, totalStakeAmount());
         uint256 totalRewardsAmount = SafeMath.sub(totalWalletBalance(),totalUserRewards()); 
-        uint256 userIncrementReward = SafeMath.div(SafeMath.mul(totalRewardsAmount, partitionStakeAmount), 100);       
-        return userIncrementReward;
+        if(_lpToken == _rewardToken){
+            // deduce staking as it's the same erc20 token            
+            uint256 subTotalRewardsAmount = SafeMath.sub(totalRewardsAmount, totalStakeAmount());
+            uint256 userIncrementReward = SafeMath.div(SafeMath.mul(subTotalRewardsAmount, partitionStakeAmount), 100);       
+            return userIncrementReward;
+        }else{
+            uint256 userIncrementReward = SafeMath.div(SafeMath.mul(totalRewardsAmount, partitionStakeAmount), 100);       
+            return userIncrementReward;
+        }        
     }
 
     // set reward to
@@ -90,9 +97,9 @@ contract UserRewards is Context, Ownable{
         IERC20(_lpToken).transferFrom(_msgSender(), address(this), _amount);
         STAKE storage _stake = _stakeInfo[_msgSender()];  
         if (_stake.amount > 0) {        
-             claimReward();
             _stake.lastUpdatedAt = block.timestamp;
-            _stake.amount = SafeMath.add(_stake.amount, _amount);           
+            _stake.amount = SafeMath.add(_stake.amount, _amount);  
+            claimReward();                    
             emit Stake(_msgSender(), _amount);
         } else {
             _stake.lastUpdatedAt = block.timestamp;
@@ -103,13 +110,13 @@ contract UserRewards is Context, Ownable{
     }
 
     function unstake() public {
-        require(_stakeInfo[_msgSender()].amount > 0, "Not staking");
+        require(_stakeInfo[_msgSender()].amount > 0, "User is not staker.");
         STAKE storage _stake = _stakeInfo[_msgSender()];
-        uint256 amount = _stake.amount;
-        _stake.amount = 0;
-        _stake.lastUpdatedAt = block.timestamp;
+        uint256 amount = _stake.amount;      
         // claim for user reward and re-calculate for rest of them
         claimReward();
+        _stake.amount = 0;
+        _stake.lastUpdatedAt = block.timestamp;
         for (uint256 i = 0; i < _stakers.length; i++) {
             if (_stakers[i] == _msgSender()) {
                 _stakers[i] = _stakers[_stakers.length - 1];
@@ -120,8 +127,8 @@ contract UserRewards is Context, Ownable{
 
         uint256 fee = SafeMath.div(amount ,100);
         uint256 _amount = SafeMath.sub(amount, fee);
-        IERC20(_lpToken).transfer(_msgSender(), _amount);
         IERC20(_lpToken).transfer(NLIFEWallet,fee);
+        IERC20(_lpToken).transfer(_msgSender(), _amount);            
         emit Unstake(_msgSender(), amount);
     }
 
@@ -140,7 +147,9 @@ contract UserRewards is Context, Ownable{
         }        
         uint256 totalReward = SafeMath.add(reward, _userRewardsDetails[_msgSender()].userReward);
         _userRewardsDetails[_msgSender()].userReward = 0; 
-        IERC20(_rewardToken).transfer(_msgSender(), totalReward);
+        if(totalReward > 0){
+             IERC20(_rewardToken).transfer(_msgSender(), totalReward);
+        }       
         emit Withdraw(_msgSender(), totalReward);
     }
   }
