@@ -1,0 +1,1 @@
+docker run -p 8088:80 remixproject/remix-ide:latest
